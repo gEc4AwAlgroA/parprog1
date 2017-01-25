@@ -53,7 +53,6 @@ abstract class TaskScheduler {
     (ta.join(), tb.join(), tc.join(), td)
   }
 
-1 to 6
 def monteCarloCount(iter: Long): Long = {
   val random = new Random
   var hits = 0L
@@ -86,5 +85,9 @@ def monteCarloPiPar(iter: Long): Double = {
   4.0 * (pi1 + pi2 + pi3 + pi4 + pi1a + pi2a + pi3a + pi4a) / iter
 }
 
-monteCarloPiPar(10000)
+monteCarloPiPar(1000000)
+monteCarloPiPar(1000000)
+monteCarloPiPar(1000000)
+monteCarloPiPar(1000000)
+monteCarloPiPar(1000000)
 //monteCarloPiPar(1000000000L) //slow
