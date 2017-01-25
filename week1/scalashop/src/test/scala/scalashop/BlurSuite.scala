@@ -100,5 +100,66 @@ class BlurSuite extends FunSuite {
     check(3, 2, 6)
   }
 
+  test("VerticalBoxBlur.parBlur with radius 0 should not change 2x2 image - 1 task") {
+    val w = 2
+    val h = 2
+    val src = new Img(w, h)
+    val dst = new Img(w, h)
+    src(0, 0) = 0; src(1, 0) = 1
+    src(0, 1) = 3; src(1, 1) = 4
 
+    VerticalBoxBlur.parBlur(src, dst, 1, 0)
+
+    def check(x: Int, y: Int, expected: Int) =
+      assert(dst(x, y) == expected,
+        s"(destination($x, $y) should be $expected)")
+
+    check(0, 0, 0)
+    check(1, 0, 1)
+    check(0, 1, 3)
+    check(1, 1, 4)
+
+  }
+
+  test("VerticalBoxBlur.parBlur with radius 0 should not change 2x2 image - 2 tasks") {
+    val w = 2
+    val h = 2
+    val src = new Img(w, h)
+    val dst = new Img(w, h)
+    src(0, 0) = 0; src(1, 0) = 1
+    src(0, 1) = 3; src(1, 1) = 4
+
+    VerticalBoxBlur.parBlur(src, dst, 2, 0)
+
+    def check(x: Int, y: Int, expected: Int) =
+      assert(dst(x, y) == expected,
+        s"(destination($x, $y) should be $expected)")
+
+    check(0, 0, 0)
+    check(1, 0, 1)
+    check(0, 1, 3)
+    check(1, 1, 4)
+
+  }
+
+  test("VerticalBoxBlur.parBlur with radius 1 should change 2x2 image to all same - 2 tasks") {
+    val w = 2
+    val h = 2
+    val src = new Img(w, h)
+    val dst = new Img(w, h)
+    src(0, 0) = 10; src(1, 0) = 10
+    src(0, 1) = 30; src(1, 1) = 50
+
+    VerticalBoxBlur.parBlur(src, dst, 2, 1)
+
+    def check(x: Int, y: Int, expected: Int) =
+      assert(dst(x, y) == expected,
+        s"(destination($x, $y) should be $expected)")
+
+    check(0, 0, 25)
+    check(1, 0, 25)
+    check(0, 1, 25)
+    check(1, 1, 25)
+
+  }
 }
