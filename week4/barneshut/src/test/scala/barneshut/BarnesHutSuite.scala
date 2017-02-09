@@ -138,6 +138,72 @@ import FloatOps._
     assert(res, s"Body not found in the right sector")
   }
 
+  test("'SectorMatrix.+=' should add a body at (0,0) to the correct bucket of a sector matrix of size 96") {
+    val body = new Body(5, 0, 0, 0.1f, 0.1f)
+    val boundaries = new Boundaries()
+    boundaries.minX = 1
+    boundaries.minY = 1
+    boundaries.maxX = 97
+    boundaries.maxY = 97
+    val sm = new SectorMatrix(boundaries, SECTOR_PRECISION)
+    sm += body
+    val res = sm(0, 0).size == 1 && sm(0, 0).find(_ == body).isDefined
+    assert(res, s"Body not found in the right sector")
+  }
+
+  test("'SectorMatrix.+=' should add a body at (99,99) to the correct bucket of a sector matrix of size 96") {
+    val body = new Body(5, 99, 99, 0.1f, 0.1f)
+    val boundaries = new Boundaries()
+    boundaries.minX = 1
+    boundaries.minY = 1
+    boundaries.maxX = 97
+    boundaries.maxY = 97
+    val sm = new SectorMatrix(boundaries, SECTOR_PRECISION)
+    sm += body
+    val res = sm(7, 7).size == 1 && sm(7, 7).find(_ == body).isDefined
+    assert(res, s"Body not found in the right sector")
+  }
+
+  test("'SectorMatrix.combine' should add simple sector matrices correctly") {
+    val body = new Body(5, 0, 0, 0.1f, 0.1f)
+    val body2 = new Body(5, 99, 99, 0.1f, 0.1f)
+    val boundaries = new Boundaries()
+    boundaries.minX = 1
+    boundaries.minY = 1
+    boundaries.maxX = 97
+    boundaries.maxY = 97
+    val sm1 = new SectorMatrix(boundaries, SECTOR_PRECISION)
+    sm1 += body
+    val sm2 = new SectorMatrix(boundaries, SECTOR_PRECISION)
+    sm2 += body2
+    val sm3 = sm1 combine sm2
+    val res = sm3(0, 0).size == 1 && sm3(0, 0).find(_ == body).isDefined
+    val res2 = sm3(7, 7).size == 1 && sm3(7, 7).find(_ == body2).isDefined
+    assert(res && res2, s"Body not found in the right sectors of $sm3 using $sm1 and $sm2")
+  }
+
+  test("'SectorMatrix.combine' should add overlapping sector matrices correctly") {
+    val body = new Body(5, 0, 0, 0.1f, 0.1f)
+    val body2 = new Body(5, 99, 99, 0.1f, 0.1f)
+    val body3 = new Body(5, 5, 5, 0.1f, 0.1f)
+    val boundaries = new Boundaries()
+    boundaries.minX = 1
+    boundaries.minY = 1
+    boundaries.maxX = 97
+    boundaries.maxY = 97
+    val sm1 = new SectorMatrix(boundaries, 12)
+    sm1 += body
+    val sm2 = new SectorMatrix(boundaries, 12)
+    sm2 += body2 += body3
+    val sm3 = sm1 combine sm2
+    val res = sm3(0, 0).size == 2 && sm3(0, 0).find(_ == body).isDefined && sm3(0, 0).find(_ == body3).isDefined
+    val res2 = sm3(11, 11).size == 1 && sm3(11, 11).find(_ == body2).isDefined
+    assert(res && res2, s"Body not found in the right sectors of $sm3 using $sm1 and $sm2")
+  }
+
+  // test cases for simulator
+
+
 }
 
 object FloatOps {

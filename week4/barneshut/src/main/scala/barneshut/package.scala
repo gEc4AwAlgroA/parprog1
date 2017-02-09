@@ -165,14 +165,28 @@ package object barneshut {
     for (i <- 0 until matrix.length) matrix(i) = new ConcBuffer
 
     def +=(b: Body): SectorMatrix = {
-      ???
+      val posX = {
+        val pos = ((b.x - boundaries.minX)/sectorSize).toInt
+        if (pos < 0) 0
+        else if (pos >= sectorPrecision) sectorPrecision - 1
+        else pos
+      }
+      val posY = {
+        val pos = ((b.y - boundaries.minY)/sectorSize).toInt
+        if (pos < 0) 0
+        else if (pos >= sectorPrecision) sectorPrecision - 1
+        else pos
+      }
+      matrix(posY * sectorPrecision + posX) += b
+
       this
     }
 
     def apply(x: Int, y: Int) = matrix(y * sectorPrecision + x)
 
     def combine(that: SectorMatrix): SectorMatrix = {
-      ???
+      for (i <- matrix.indices) matrix(i) = matrix(i) combine that.matrix(i)
+      this
     }
 
     def toQuad(parallelism: Int): Quad = {
@@ -207,7 +221,11 @@ package object barneshut {
       quad(0, 0, sectorPrecision, 1)
     }
 
-    override def toString = s"SectorMatrix(#bodies: ${matrix.map(_.size).sum})"
+    override def toString = {
+      var nonEmpty: List[String] = List()
+      for (i <- matrix.indices) if (matrix(i).size>0) nonEmpty = (i, matrix(i)).toString() :: nonEmpty
+      s"SectorMatrix(#bodies: ${nonEmpty.toString})"
+    }
   }
 
   class TimeStatistics {
