@@ -5,21 +5,14 @@ package object barneshut {
 
   class Boundaries {
     var minX = Float.MaxValue
-
     var minY = Float.MaxValue
-
     var maxX = Float.MinValue
-
     var maxY = Float.MinValue
 
     def width = maxX - minX
-
     def height = maxY - minY
-
     def size = math.max(width, height)
-
     def centerX = minX + width / 2
-
     def centerY = minY + height / 2
 
     override def toString = s"Boundaries($minX, $minY, $maxX, $maxY)"
@@ -27,65 +20,78 @@ package object barneshut {
 
   sealed abstract class Quad {
     def massX: Float
-
     def massY: Float
-
     def mass: Float
-
     def centerX: Float
-
     def centerY: Float
-
     def size: Float
-
     def total: Int
-
     def insert(b: Body): Quad
   }
 
   case class Empty(centerX: Float, centerY: Float, size: Float) extends Quad {
-    def massX: Float = ???
-    def massY: Float = ???
-    def mass: Float = ???
-    def total: Int = ???
-    def insert(b: Body): Quad = ???
+    def massX: Float = centerX
+    def massY: Float = centerY
+    def mass: Float = 0f
+    def total: Int = 0
+
+    def insert(b: Body): Quad = Leaf(centerX, centerY, size, Seq(b))
   }
 
   case class Fork(
     nw: Quad, ne: Quad, sw: Quad, se: Quad
   ) extends Quad {
-    val centerX: Float = ???
-    val centerY: Float = ???
-    val size: Float = ???
-    val mass: Float = ???
-    val massX: Float = ???
-    val massY: Float = ???
-    val total: Int = ???
+    val centerX: Float = (nw.centerX + ne.centerX)/2
+    val centerY: Float = (nw.centerY + sw.centerY)/2
+    val size: Float = 2 * nw.size
+    val mass: Float = nw.mass + ne.mass + sw.mass + se.mass
+    val massX: Float =
+      if (mass==0) centerX
+      else (nw.mass * nw.massX + ne.mass * ne.massX + sw.mass * sw.massX + se.mass * se.massX) / mass
+    val massY: Float =
+      if (mass==0) centerY
+      else (nw.mass * nw.massY + ne.mass * ne.massY + sw.mass * sw.massY + se.mass * se.massY) / mass
+    val total: Int = nw.total + ne.total + sw.total + se.total
 
     def insert(b: Body): Fork = {
-      ???
+      (b.x < centerX, b.y < centerY) match {
+        case (true, true) => Fork(nw.insert(b), ne, sw, se)
+        case (false, true) => Fork(nw, ne.insert(b), sw, se)
+        case (true, false) => Fork(nw, ne, sw.insert(b), se)
+        case (false, false) => Fork(nw, ne, sw, se.insert(b))
+      }
     }
   }
 
   case class Leaf(centerX: Float, centerY: Float, size: Float, bodies: Seq[Body])
   extends Quad {
-    val (mass, massX, massY) = (??? : Float, ??? : Float, ??? : Float)
-    val total: Int = ???
-    def insert(b: Body): Quad = ???
+    val (mass, massX, massY) = (
+      bodies.map(_.mass).sum : Float,
+      bodies.map(b => b.mass * b.x).sum / bodies.map(_.mass).sum  : Float,
+      bodies.map(b => b.mass * b.y).sum / bodies.map(_.mass).sum : Float
+    )
+    val total: Int = bodies.length
+    def insert(b: Body): Quad =
+      if (size <= minimumSize) Leaf(centerX, centerY, size, bodies :+ b)
+      else {
+        var newFork = Fork(
+          Empty(centerX - size/4, centerY - size/4, size/2),
+          Empty(centerX + size/4, centerY - size/4, size/2),
+          Empty(centerX - size/4, centerY + size/4, size/2),
+          Empty(centerX + size/4, centerY + size/4, size/2)
+        )
+        bodies.foreach(bExisting => newFork = newFork.insert(bExisting))
+        newFork.insert(b)
+      }
   }
 
   def minimumSize = 0.00001f
-
   def gee: Float = 100.0f
-
   def delta: Float = 0.01f
-
   def theta = 0.5f
-
   def eliminationThreshold = 0.5f
 
   def force(m1: Float, m2: Float, dist: Float): Float = gee * m1 * m2 / (dist * dist)
-
   def distance(x0: Float, y0: Float, x1: Float, y1: Float): Float = {
     math.sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)).toFloat
   }
@@ -123,9 +129,19 @@ package object barneshut {
           // no force
         case Leaf(_, _, _, bodies) =>
           // add force contribution of each body by calling addForce
+          bodies.foreach(b => addForce(b.mass, b.x, b.y))
         case Fork(nw, ne, sw, se) =>
           // see if node is far enough from the body,
           // or recursion is needed
+          if (quad.size / distance(quad.centerX, quad.centerY, x, y) < theta) {
+            addForce(quad.mass, quad.massX, quad.massY)
+          }
+          else {
+            traverse(nw)
+            traverse(ne)
+            traverse(sw)
+            traverse(se)
+          }
       }
 
       traverse(quad)
@@ -138,6 +154,7 @@ package object barneshut {
       new Body(mass, nx, ny, nxspeed, nyspeed)
     }
 
+    override def toString: String = s"body: $mass, $x, $y, $xspeed, $yspeed"
   }
 
   val SECTOR_PRECISION = 8

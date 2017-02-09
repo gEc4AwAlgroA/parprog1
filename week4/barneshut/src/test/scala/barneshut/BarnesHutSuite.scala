@@ -74,6 +74,16 @@ import FloatOps._
     }
   }
 
+  test("Leaf.insert(b) should return a Leaf with two bodies - non forking") {
+    val b = new Body(1f, 0.5f, 0.5f, 0f, 0f)
+    val leaf = Leaf(1.0f, 1.0f, 2.0f, Seq(b))
+    val b2 = new Body(1f, 1.5f, 0.5f, 0f, 0f)
+    val inserted = leaf.insert(b2)
+    assert(inserted == Fork(Leaf(0.5f,0.5f,1.0f,Seq(b)), Leaf(1.5f,0.5f,1.0f,Seq(b2)),
+    Empty(0.5f,1.5f,1.0f), Empty(1.5f,1.5f,1.0f) )
+      , s"$inserted should be correct")
+  }
+
   // test cases for Body
 
   test("Body.updated should do nothing for Empty quad trees") {
@@ -95,6 +105,22 @@ import FloatOps._
 
     assert(body.xspeed ~= 12.587037f)
     assert(body.yspeed ~= 0.015557117f)
+  }
+
+  test("Body.updated should not traverse sub quads of a distant fork") {
+    val b = new Body(100f, 55f, 60f, 0f, 0f)
+
+    val b1 = new Body(123f, 18f, 26f, 0f, 0f)
+    val b2 = new Body(524.5f, 24.5f, 25.5f, 0f, 0f)
+    val b3 = new Body(245f, 22.4f, 41f, 0f, 0f)
+
+    val quad = Fork(Empty(10.0f,30.0f,10.0f), Leaf(20.0f,30.0f,10.0f,Seq(b1, b2)),
+      Empty(10.0f,40.0f,10.0f), Leaf(20.0f,40.0f,10.0f,Seq(b3)))
+
+    val body = b.updated(quad)
+
+    assert(body.xspeed ~= -0.33580848f, s"${body.xspeed} wrong")
+    assert(body.yspeed ~= -0.31694406f, s"${body.yspeed} wrong")
   }
 
   // test cases for sector matrix
